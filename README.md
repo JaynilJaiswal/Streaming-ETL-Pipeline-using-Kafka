@@ -65,5 +65,45 @@ To exit the MySQL server, use the command:
 ```bash
 exit
 ```
+## Kafka Data Streaming Instructions
+
+### 1. Create a Kafka Topic
+Create a Kafka topic named `toll`.
+
+### 2. Download and Configure the Traffic Generator
+Download the `toll_traffic_generator.py` script using the command below:
+
+```bash
+wget https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBM-DB0250EN-SkillsNetwork/labs/Final%20Assignment/toll_traffic_generator.py
+```
+### 3. Run the Traffic Generator
+Execute the traffic generator script with the following command:
+```bash
+python3 toll_traffic_generator.py
+```
+
+### 4. Download and Configure the Streaming Data Reader
+Download the streaming-data-reader.py script using the command below:
+```bash
+wget https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/vVxmU5uatDowvAIKRZrFjg/streaming-data-reader.py
+```
+Open `streaming-data-reader.py` in your editor and update the following details to connect to your MySQL server:
+- TOPIC
+- DATABASE
+- USERNAME
+- PASSWORD
+
+### 5. Run the Streaming Data Reader
+Execute the streaming data reader script with the following command:
+```bash
+python3 streaming-data-reader.py
+```
+
+### 6. Verify Data Storage
+To verify that the streaming toll data is being stored correctly, open the MySQL CLI and list the top 10 rows in the `livetolldata` table:
+```
+SELECT * FROM livetolldata LIMIT 10;
+```
+
 
 
