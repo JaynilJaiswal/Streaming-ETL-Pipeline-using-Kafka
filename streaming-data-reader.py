@@ -1,44 +1,50 @@
 """
-Streaming data consumer
+Streaming data consumer for Airflow DAG
 """
 from datetime import datetime
 from kafka import KafkaConsumer
 import mysql.connector
 
-TOPIC='vehicles'
+TOPIC = 'vehicles'
 DATABASE = 'tolldata'
 USERNAME = 'root'
 PASSWORD = 'zF4PAiJvletQsnQwe2P6Jc5C'
 
-print("Connecting to the database")
-try:
-    connection = mysql.connector.connect(host='mysql', database=DATABASE, user=USERNAME, password=PASSWORD)
-except Exception:
-    print("Could not connect to database. Please check credentials")
-else:
-    print("Connected to database")
-cursor = connection.cursor()
+def consume_kafka_messages(max_messages=100):
+    print("Connecting to the database...")
+    try:
+        connection = mysql.connector.connect(host='mysql', database=DATABASE, user=USERNAME, password=PASSWORD)
+        cursor = connection.cursor()
+        print("Connected to database.")
 
-print("Connecting to Kafka")
-consumer = KafkaConsumer(TOPIC)
-print("Connected to Kafka")
-print(f"Reading messages from the topic {TOPIC}")
-for msg in consumer:
+        print("Connecting to Kafka...")
+        consumer = KafkaConsumer(TOPIC, bootstrap_servers='localhost:9092', auto_offset_reset='earliest')
+        print("Connected to Kafka.")
 
-    # Extract information from kafka
+        count = 0
+        for msg in consumer:
+            if count >= max_messages:
+                break
 
-    message = msg.value.decode("utf-8")
+            message = msg.value.decode("utf-8")
+            timestamp, vehicle_id, vehicle_type, plaza_id = message.split(",")
 
-    # Transform the date format to suit the database schema
-    (timestamp, vehcile_id, vehicle_type, plaza_id) = message.split(",")
+            dateobj = datetime.strptime(timestamp, '%a %b %d %H:%M:%S %Y')
+            timestamp = dateobj.strftime("%Y-%m-%d %H:%M:%S")
 
-    dateobj = datetime.strptime(timestamp, '%a %b %d %H:%M:%S %Y')
-    timestamp = dateobj.strftime("%Y-%m-%d %H:%M:%S")
+            sql = "INSERT INTO livetolldata VALUES(%s, %s, %s, %s)"
+            cursor.execute(sql, (timestamp, vehicle_id, vehicle_type, plaza_id))
+            print(f"A {vehicle_type} was inserted into the database")
+            connection.commit()
+            count += 1
 
-    # Loading data into the database table
+    except Exception as e:
+        print(f"Error: {e}")
 
-    sql = "insert into livetolldata values(%s,%s,%s,%s)"
-    result = cursor.execute(sql, (timestamp, vehcile_id, vehicle_type, plaza_id))
-    print(f"A {vehicle_type} was inserted into the database")
-    connection.commit()
-connection.close()
+    finally:
+        cursor.close()
+        connection.close()
+        consumer.close()
+
+if __name__ == "__main__":
+    consume_kafka_messages()

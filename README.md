@@ -1,10 +1,15 @@
-# Streaming-ETL-Pipeline-using-Kafka
-This is a project that aims to de-congest the national highways by analyzing the road traffic data from different toll plazas. As a vehicle passes a toll plaza, the vehicle's data like vehicle_id, vehicle_type, toll_plaza_id, and timestamp are streamed to Kafka. 
+# Streaming-ETL-Pipeline-using-Kafka with Airflow Automation
+
+This project aims to decongest national highways by analyzing road traffic data from different toll plazas. As a vehicle passes a toll plaza, its data (vehicle_id, vehicle_type, toll_plaza_id, and timestamp) is streamed to Kafka and processed in parallel using multithreading for high efficiency. Apache Airflow is used to automate the ETL workflow.
+
+## Key Features
+- **Real-time Traffic Data Streaming**: Uses Kafka for vehicle data ingestion.
+- **Multithreaded Processing**: Optimized for handling 1 million records efficiently.
+- **Automated ETL Pipeline**: Apache Airflow orchestrates data extraction, transformation, and loading.
 
 ## Setup Instructions for Kafka
 
 ### 1. Navigate to the Kafka Directory
-
 Change to the Kafka directory using the following command:
 ```bash
 cd kafka_2.12-3.7.0
@@ -32,26 +37,23 @@ bin/kafka-server-start.sh config/kraft/server.properties
 ## MySQL Server Setup Instructions
 
 ### 1. Connect to the MySQL Server
-
-Open your terminal and connect to the MySQL server using the following command. Use the password provided when the MySQL server was initialized:
-
+Open your terminal and connect to the MySQL server using the following command:
 ```bash
 mysql --host=mysql --port=3306 --user=root --password=YourPasswordHere
 ```
 
 ### 2. Create a Database
-At the `mysql>` prompt, execute the following command to create a new database named `tolldata`:
+Create a new database named `tolldata`:
 ```bash
 create database tolldata;
 ```
 
 ### 3. Create a Table
-To create a table named `livetolldata` within the `tolldata` database, follow these steps:
-#### 1. Switch to the `tolldata` database:
+Switch to the `tolldata` database:
 ```bash
 use tolldata;
 ```
-#### 2. Create the `livetolldata` table with the specified schema:
+Create the `livetolldata` table:
 ```bash
 create table livetolldata(
     timestamp datetime,
@@ -60,50 +62,62 @@ create table livetolldata(
     toll_plaza_id smallint
 );
 ```
-### 4. Disconnect from the MySQL Server
-To exit the MySQL server, use the command:
-```bash
-exit
-```
+
 ## Kafka Data Streaming Instructions
 
 ### 1. Create a Kafka Topic
 Create a Kafka topic named `toll`.
 
-### 2. Download and Configure the Traffic Generator
-Download the `toll_traffic_generator.py` script using the command below:
-
+### 2. Download and Configure the Multithreaded Traffic Generator
+Download the updated `toll_traffic_generator.py` script:
 ```bash
-wget https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/IBM-DB0250EN-SkillsNetwork/labs/Final%20Assignment/toll_traffic_generator.py
+wget https://your-updated-url/toll_traffic_generator.py
 ```
-### 3. Run the Traffic Generator
-Execute the traffic generator script with the following command:
+Run the script to generate and send 1 million records efficiently:
 ```bash
 python3 toll_traffic_generator.py
 ```
 
-### 4. Download and Configure the Streaming Data Reader
-Download the streaming-data-reader.py script using the command below:
+### 3. Download and Configure the Streaming Data Reader
+Download the `streaming-data-reader.py` script:
 ```bash
-wget https://cf-courses-data.s3.us.cloud-object-storage.appdomain.cloud/vVxmU5uatDowvAIKRZrFjg/streaming-data-reader.py
+wget https://your-updated-url/streaming-data-reader.py
 ```
-Open `streaming-data-reader.py` in your editor and update the following details to connect to your MySQL server:
+Update `streaming-data-reader.py` to connect to MySQL:
 - TOPIC
 - DATABASE
 - USERNAME
 - PASSWORD
 
-### 5. Run the Streaming Data Reader
-Execute the streaming data reader script with the following command:
+Run the script for concurrent data processing:
 ```bash
 python3 streaming-data-reader.py
 ```
 
-### 6. Verify Data Storage
-To verify that the streaming toll data is being stored correctly, open the MySQL CLI and list the top 10 rows in the `livetolldata` table:
-```
+### 4. Verify Data Storage
+Check the first 10 rows in MySQL:
+```bash
 SELECT * FROM livetolldata LIMIT 10;
 ```
 
+## Automating ETL with Airflow
+### 1. Install and Start Airflow
+```bash
+pip install apache-airflow
+export AIRFLOW_HOME=~/airflow
+airflow db init
+airflow webserver -p 8080 &
+airflow scheduler &
+```
+### 2. Create an Airflow DAG
+Define an ETL DAG to automate Kafka consumption and MySQL insertion.
+Save it as `etl_dag.py` in `~/airflow/dags/`.
 
+### 3. Trigger the DAG
+Start the ETL pipeline:
+```bash
+airflow dags trigger kafka_etl_pipeline
+```
+
+This setup ensures that the pipeline efficiently processes large-scale streaming data while being fully automated with Airflow.
 
